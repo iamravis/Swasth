@@ -13,6 +13,7 @@ generation:
   temperature: 0.0  # Crucial: 0.0 minimizes hallucination in 20B models
   top_p: 0.9
   max_tokens: 4096
+  num_pairs: 3      # Number of QA pairs to generate per topic
 
 prompts:
   summary: |

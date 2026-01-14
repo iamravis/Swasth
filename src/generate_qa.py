@@ -7,9 +7,13 @@ from synthetic_data_kit.generators.qa_generator import QAGenerator
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-class QualityGenerator:
     def __init__(self, config_path="config/sft_config.yaml"):
         self.config_path = Path(config_path)
+        import yaml
+        with open(self.config_path, 'r') as f:
+            self.config = yaml.safe_load(f)
+        
+        self.num_pairs = self.config.get("generation", {}).get("num_pairs", 3)
         self.client = LLMClient(config_path=self.config_path)
         self.generator = QAGenerator(client=self.client, config_path=self.config_path)
 
@@ -41,7 +45,7 @@ class QualityGenerator:
 
                     text = topic_file.read_text(encoding="utf-8")
                     # Use the SDK's process_document which handles summary and QA pairs
-                    results = self.generator.process_document(text, num_pairs=3, verbose=True)
+                    results = self.generator.process_document(text, num_pairs=self.num_pairs, verbose=True)
                     
                     if results and "qa_pairs" in results:
                         output_file.write_text(json.dumps(results, indent=2))
