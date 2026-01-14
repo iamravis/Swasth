@@ -6,7 +6,8 @@ venv/
 .env
 
 # Data
-data/
+data/processed/
+# Keep other legacy/processed folders ignored
 sft_outputs/
 sft_inputs/
 guidelines_chunks/
