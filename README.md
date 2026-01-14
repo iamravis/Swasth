@@ -1,34 +1,38 @@
-# Medical SFT Data Pipeline
+# Swasth: Professional Medical SFT Pipeline
 
-A professional pipeline to transform clinical guidelines into context-enriched synthetic datasets for fine-tuning LLMs.
+A high-performance system for transforming clinical guidelines into context-enriched synthetic datasets for Supervised Fine-Tuning (SFT).
 
-## 🚀 Features
-- **Docling v2 Integration**: High-fidelity PDF-to-Markdown with structural awareness.
-- **Contextual Breadcrumbs**: Injects heading hierarchy into every training unit.
-- **NVIDIA GPU Optimized**: Built-in support for multiple 3090 GPUs.
-- **Unicode Normalization**: Automatic cleanup of non-breaking hyphens and medical artifacts.
+## 🚀 Key Features
 
-## 🛠 Setup
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Place raw PDFs in `data/raw/`.
-3. Run the pipeline:
-   ```bash
-   python3 -m src.pipeline
-   ```
+- **Structural Preservation**: Leverages Docling v2 for high-fidelity conversion of complex medical PDFs and documents.
+- **Hierarchical Context**: Automatically builds contextual breadcrumbs from document headers to enrich knowledge units.
+- **Multi-Backend Acceleration**: Cross-platform support for hardware acceleration (CUDA/MPS) via a unified detection engine.
+- **Universal Automation**: A single entry point for extraction, transformation, and generation with built-in service health checks.
+- **Incremental Processing**: Intelligent "Resume" logic that skips previously structured or generated data to optimize compute cycles.
 
-## 🧠 GPU Resource Management (3x 3090)
-To limit Ollama to 70% of your 3x 3090s while generating data:
+## 🛠 Usage
+
+### 1. Unified Execution
+Run the entire pipeline (Extraction -> Health Check -> Generation) with a single command:
 ```bash
-# Limit Ollama parallel generation
-export OLLAMA_NUM_PARALLEL=3
-# Use SDK with local model
-synthetic-data-kit create ./data/processed/sdk_inputs/ --api-base http://localhost:11434/v1 --model gpt-oss:20b
+python3 main.py
 ```
 
-## 📁 Structure
-- `src/`: Core logic and CLI.
-- `config/`: Prompt templates and SDK configurations.
-- `data/`: Raw inputs and multi-stage processed outputs.
+### 2. Deployment Guidelines
+For large-scale dataset generation, ensure your local inference server (e.g., Ollama) is configured to handle the desired concurrency.
+```bash
+# Example: Configure parallel generation threads
+export OLLAMA_NUM_PARALLEL=4
+```
+
+## 📁 Project Architecture
+
+- `src/core.py`: Hardware detection and data sanitization modules.
+- `src/pipeline.py`: Document processing and hierarchical structuring.
+- `src/generate_qa.py`: High-fidelity synthetic data generation engine.
+- `config/`: Enterprise-grade prompt templates and pipeline configurations.
+- `data/`: Modular data lake for raw inputs and multi-stage outputs.
+
+## ⚙️ Configuration
+
+Custom SFT standards are defined in `config/sft_config.yaml`. The pipeline is pre-configured for clinical depth, expert clinical personas, and strict evidence grounding.

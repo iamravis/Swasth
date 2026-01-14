@@ -32,7 +32,7 @@ graph TD
 ## 2. Microscopic Code Breakdown
 
 ### `src/core.py`: The Hardware & Quality Guard
-*   **Dual-GPU Detection**: It uses `torch` to detect the environment. If it finds an NVIDIA GPU, it initializes `AcceleratorDevice.CUDA`. If it finds a Mac, it uses `AcceleratorDevice.MPS`. This ensures maximum speed on both your 3x 3090s and your local machine.
+*   **Multi-Backend Acceleration**: It uses `torch` to detect the environment. It automatically initializes the appropriate accelerator (e.g., CUDA for NVIDIA GPUs or MPS for Apple Silicon). This ensures maximum performance across various workstation and server environments.
 *   **Unicode Sanitization**: Medical PDFs often contain non-standard characters (like the `\u2011` non-breaking hyphen). `clean_text()` normalizes everything to NFKC standard to prevent training artifacts.
 
 ### `src/pipeline.py`: The Context Architect
@@ -49,10 +49,12 @@ graph TD
 
 ---
 
-## 3. GPU Power Management (3x 3090)
-To maximize your 3x 3090s, we use two separate paths:
-1.  **Extraction (Docling)**: Uses Torch's CUDA backend to parallelize the layout analysis and OCR.
-2.  **Inference (Ollama)**: Ollama load-balances across all 3 GPUs. By using the `gpt-oss:20b` model, we utilize the massive VRAM of your 3090s for high-quality reasoning that smaller models miss.
+---
+
+## 3. High-Performance Compute Strategy
+The system is architected for scalability across high-performance compute environments:
+1.  **Extraction Tier (Docling)**: Leverages hardware acceleration to parallelize layout analysis and OCR.
+2.  **Inference Tier**: Dynamically load-balances across available compute resources. By targeting high-parameter models (e.g., 20B+), the pipeline utilizes large memory buffers for the sophisticated reasoning required in clinical datasets.
 
 ---
 
