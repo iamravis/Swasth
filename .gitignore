@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Data
+data/
+sft_outputs/
+sft_inputs/
+guidelines_chunks/
+guidelines_structured_md/
+medical_guidelines_raw/
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store

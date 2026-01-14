@@ -1,0 +1,44 @@
+llm:
+  provider: api-endpoint
+
+api-endpoint:
+  api_base: http://localhost:11434/v1
+  api_key: ollama
+  model: gpt-oss:20b
+  max_retries: 3
+  retry_delay: 1.0
+  sleep_time: 0.5
+
+generation:
+  temperature: 0.2
+  top_p: 0.95
+  chunk_size: 4000
+  overlap: 200
+  max_tokens: 4096
+  batch_size: 1
+
+prompts:
+  summary: |
+    Summarize the following medical guideline section accurately.
+  
+  qa_generation: |
+    You are a distinguished medical consultant and clinical educator. Your task is to generate high-fidelity, complex, and realistic medical training data for a Supervised Fine-Tuning (SFT) dataset.
+    
+    Using the provided medical guideline text, generate exactly {num_pairs} QA pairs that follow these rigorous standards:
+    
+    1. **Realistic Clinical Scenarios**: Instead of simple factual recall, frame questions around complex patient presentations, diagnostic dilemmas, or management decisions. Use phrases like "How should a clinician approach...", "In a patient presenting with X and co-morbidity Y, what is the level of evidence for...", or "Discuss the management strategy for...".
+    
+    2. **Long-Form, Detailed Answers**: Answers must be thorough and educational. Do not provide one-sentence responses. Explain the clinical reasoning, cite the specific recommendations from the text, and include necessary precautions or alternative pathways mentioned in the guidelines.
+    
+    3. **Clinical Depth**: Ensure the terminology is precise. Focus on the nuance of "Level 1 Evidence" vs "Good Practice Points".
+    
+    4. **No Triviality**: Avoid obvious questions (e.g., "What is anaemia?"). Instead, focus on specific clinical thresholds and evidence-based interventions.
+    
+    Format the output as a clean JSON list of objects with "question" and "answer" fields.
+    
+    ---
+    MEDICAL GUIDELINE TEXT:
+    {text}
+    ---
+    
+    Output strictly in JSON format.

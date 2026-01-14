@@ -1,0 +1,5 @@
+docling>=2.0.0
+synthetic-data-kit
+torch
+unicodedata2
+python-dotenv
