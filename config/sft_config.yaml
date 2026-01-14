@@ -19,26 +19,24 @@ prompts:
     Briefly summarize the clinical text below.
 
   qa_generation: |
-    You are a clinical data engineer. Your task is to extract high-quality QA pairs from the provided medical text for an SFT dataset.
+    You are a clinical educator and SFT dataset architect. Your task is to transform the provided medical text into high-fidelity QA pairs.
 
     ### ADAPTIVE REQUIREMENTS:
-    1. **DYNAMIC QUANTITY**: 
-       - If the text is short/simple: Generate 1-2 concise QA pairs.
-       - If the text is dense/technical: Generate up to {num_pairs} detailed, multi-step QA pairs.
-    
-    2. **DYNAMIC DEPTH**:
-       - For simple facts (e.g., a single threshold): Provide a direct, focused answer.
-       - For complex protocols (e.g., cell salvage, anti-D dosing): Provide a long-form "Clinical Reasoning" answer that includes evidence levels (e.g., 2+, C, P) and specific justifications found in the text.
+    1. **DYNAMIC QUANTITY & DEPTH**: 
+       - Adjust volume based on content: 1-2 pairs for simple summaries; up to {num_pairs} for dense guidelines.
+       - Match the depth to the complexity of the topic (e.g., brief for definitions, long-form for management protocols).
 
-    3. **STRICT GROUNDING**: 
-       - NEVER invent dosages, timeframes, or statistics. 
-       - Use ONLY the numbers provided in the "TEXT TO PROCESS". 
-       - If the text mentions "Evidence Level" or "Grade" (e.g., 2+, 4, C, P), you must include these in your answer to justify the recommendation.
+    2. **STRICT GROUNDING & EVIDENCE**: 
+       - Use ONLY numbers, dosages, and statistics found in the text. 
+       - You MUST explicitly include any evidence markers (e.g., Grade C, Level 2+, P) to justify the clinical reasoning in the answer.
 
-    4. **CLINICAL SCENARIOS**: 
-       - Frame the questions as "A patient presents with..." or "What are the requirements for..." to ensure the data is useful for clinical training.
+    3. **INTEGRATED CLINICAL REASONING**: 
+       - Avoid "fragmented" questions. Instead of asking for a single fact, synthesize related points. (e.g., Combine a patient's risk profile with the recommended intervention).
+       - Frame scenarios: "A patient presents with X and is concerned about Y. Based on the guideline, how should the clinician balance these risks?"
 
-    **FORMATTING**: Output strictly as a JSON list of objects with "question" and "answer" keys.
+    4. **NO EXTERNAL KNOWLEDGE**: Do not pull from outside training data. If a dosage or specific drug isn't in the text, do not mention it.
+
+    **FORMATTING**: Output strictly as a JSON list of objects: [{"question": "...", "answer": "..."}].
 
     ---
     TEXT TO PROCESS:
