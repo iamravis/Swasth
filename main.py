@@ -1,6 +1,9 @@
 import sys
 import logging
 import requests
+import argparse
+import shutil
+from pathlib import Path
 from src.pipeline import UnifiedPipeline
 from src.generate_qa import QualityGenerator
 
@@ -26,9 +29,35 @@ def check_ollama():
     logger.error("Please start Ollama before running the generation stage.")
     return False
 
+def ingest_file(file_path):
+    """Copy a single file into the data/raw directory."""
+    src = Path(file_path)
+    if not src.exists():
+        logger.error(f"❌ File not found: {file_path}")
+        sys.exit(1)
+        
+    dest_dir = Path("data/raw")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / src.name
+    
+    if dest.exists():
+        logger.info(f"ℹ️ File {src.name} already exists in data/raw.")
+    else:
+        shutil.copy2(src, dest)
+        logger.info(f"📥 Ingested {src.name} to data/raw/")
+
 def run_all():
+    parser = argparse.ArgumentParser(description="Unified Medical SFT Pipeline")
+    parser.add_argument("--file", "-f", help="Path to a new PDF/HTML/DOCX to ingest and process")
+    args = parser.parse_args()
+
     logger.info("🚀 Starting Unified Medical SFT Pipeline")
     
+    # 0. Ingestion (Optional)
+    if args.file:
+        logger.info(f"--- Phase 0: Ingesting {args.file} ---")
+        ingest_file(args.file)
+
     # 1. Extraction & Structuring
     logger.info("--- Phase 1: Extraction & Structuring ---")
     pipeline = UnifiedPipeline()

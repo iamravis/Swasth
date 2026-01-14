@@ -13,9 +13,15 @@ A high-performance system for transforming clinical guidelines into context-enri
 ## 🛠 Usage
 
 ### 1. Unified Execution
-Run the entire pipeline (Extraction -> Health Check -> Generation) with a single command:
+Run the entire pipeline for all files in `data/raw`:
 ```bash
 python3 main.py
+```
+
+### 2. Ingest & Process a Single File
+To automatically copy a new guideline into the pipeline and process it:
+```bash
+python3 main.py --file /path/to/your/document.pdf
 ```
 
 ### 2. Deployment Guidelines
