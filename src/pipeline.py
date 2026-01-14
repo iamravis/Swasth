@@ -18,9 +18,17 @@ class UnifiedPipeline:
         files = [f for ext in ['*.pdf', '*.html', '*.docx'] for f in self.raw_dir.glob(ext)]
         
         for file in files:
+            source = file.stem
+            doc_dir = self.out_root / f"sdk_inputs/{source}"
+            
+            # Skip if already processed
+            if doc_dir.exists() and any(doc_dir.iterdir()):
+                logger.info(f"  ⏭ Skipping extraction for {file.name} (already structured)")
+                continue
+
             try:
+                logger.info(f"📄 Processing {file.name}...")
                 result = converter.convert(file)
-                source = file.stem
                 
                 # 1. Markdown
                 md = clean_text(result.document.export_to_markdown())

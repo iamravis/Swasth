@@ -10,35 +10,38 @@ api-endpoint:
   sleep_time: 0.5
 
 generation:
-  temperature: 0.2
-  top_p: 0.95
-  chunk_size: 4000
-  overlap: 200
+  temperature: 0.0  # Crucial: 0.0 minimizes hallucination in 20B models
+  top_p: 0.9
   max_tokens: 4096
-  batch_size: 1
 
 prompts:
   summary: |
-    Summarize the following medical guideline section accurately.
-  
+    Briefly summarize the clinical text below.
+
   qa_generation: |
-    You are a distinguished medical consultant and clinical educator. Your task is to generate high-fidelity, complex, and realistic medical training data for a Supervised Fine-Tuning (SFT) dataset.
+    You are a clinical data engineer. Your task is to extract high-quality QA pairs from the provided medical text for an SFT dataset.
+
+    ### ADAPTIVE REQUIREMENTS:
+    1. **DYNAMIC QUANTITY**: 
+       - If the text is short/simple: Generate 1-2 concise QA pairs.
+       - If the text is dense/technical: Generate up to {num_pairs} detailed, multi-step QA pairs.
     
-    Using the provided medical guideline text, generate exactly {num_pairs} QA pairs that follow these rigorous standards:
-    
-    1. **Realistic Clinical Scenarios**: Instead of simple factual recall, frame questions around complex patient presentations, diagnostic dilemmas, or management decisions. Use phrases like "How should a clinician approach...", "In a patient presenting with X and co-morbidity Y, what is the level of evidence for...", or "Discuss the management strategy for...".
-    
-    2. **Long-Form, Detailed Answers**: Answers must be thorough and educational. Do not provide one-sentence responses. Explain the clinical reasoning, cite the specific recommendations from the text, and include necessary precautions or alternative pathways mentioned in the guidelines.
-    
-    3. **Clinical Depth**: Ensure the terminology is precise. Focus on the nuance of "Level 1 Evidence" vs "Good Practice Points".
-    
-    4. **No Triviality**: Avoid obvious questions (e.g., "What is anaemia?"). Instead, focus on specific clinical thresholds and evidence-based interventions.
-    
-    Format the output as a clean JSON list of objects with "question" and "answer" fields.
-    
+    2. **DYNAMIC DEPTH**:
+       - For simple facts (e.g., a single threshold): Provide a direct, focused answer.
+       - For complex protocols (e.g., cell salvage, anti-D dosing): Provide a long-form "Clinical Reasoning" answer that includes evidence levels (e.g., 2+, C, P) and specific justifications found in the text.
+
+    3. **STRICT GROUNDING**: 
+       - NEVER invent dosages, timeframes, or statistics. 
+       - Use ONLY the numbers provided in the "TEXT TO PROCESS". 
+       - If the text mentions "Evidence Level" or "Grade" (e.g., 2+, 4, C, P), you must include these in your answer to justify the recommendation.
+
+    4. **CLINICAL SCENARIOS**: 
+       - Frame the questions as "A patient presents with..." or "What are the requirements for..." to ensure the data is useful for clinical training.
+
+    **FORMATTING**: Output strictly as a JSON list of objects with "question" and "answer" keys.
+
     ---
-    MEDICAL GUIDELINE TEXT:
+    TEXT TO PROCESS:
     {text}
-    ---
     
     Output strictly in JSON format.
