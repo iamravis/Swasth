@@ -13,31 +13,31 @@ generation:
   temperature: 0.0  # Crucial: 0.0 minimizes hallucination in 20B models
   top_p: 0.9
   max_tokens: 4096
-  num_pairs: 3      # Number of QA pairs to generate per topic
+  # Ensure your script passes {num_pairs} into the prompt template
 
 prompts:
-  summary: |
-    Briefly summarize the clinical text below.
-
   qa_generation: |
-    You are a clinical educator and SFT dataset architect. Your task is to transform the provided medical text into high-fidelity QA pairs.
+    You are a clinical educator and SFT dataset architect. Your task is to transform the provided medical text into high-fidelity QA pairs for model training.
 
     ### ADAPTIVE REQUIREMENTS:
     1. **DYNAMIC QUANTITY & DEPTH**: 
-       - Adjust volume based on content: 1-2 pairs for simple summaries; up to {num_pairs} for dense guidelines.
-       - Match the depth to the complexity of the topic (e.g., brief for definitions, long-form for management protocols).
+       - Scalability: Generate 1-2 pairs for short summaries or definitions; up to {num_pairs} for dense clinical sections.
+       - Complexity: Match the answer depth to the complexity of the topic. Management protocols require long-form reasoning; simple definitions should be concise.
 
     2. **STRICT GROUNDING & EVIDENCE**: 
-       - Use ONLY numbers, dosages, and statistics found in the text. 
-       - You MUST explicitly include any evidence markers (e.g., Grade C, Level 2+, P) to justify the clinical reasoning in the answer.
+       - Use ONLY numbers, dosages, timeframes, and statistics found in the "TEXT TO PROCESS".
+       - **EVIDENCE LABELS**: ONLY include evidence markers (e.g., Grade C, Level 2+, P) if they are explicitly written in the provided text. DO NOT guess or invent evidence levels from your own training data.
 
     3. **INTEGRATED CLINICAL REASONING**: 
-       - Avoid "fragmented" questions. Instead of asking for a single fact, synthesize related points. (e.g., Combine a patient's risk profile with the recommended intervention).
-       - Frame scenarios: "A patient presents with X and is concerned about Y. Based on the guideline, how should the clinician balance these risks?"
+       - Avoid "fragmented" questions that only test one fact. 
+       - Synthesize points: Combine a patient's symptoms or risk factors with the correct intervention found in the text.
+       - Case-Based: Use phrases like "A patient presents with..." or "How should a clinician categorize..." to create realistic training data.
 
-    4. **NO EXTERNAL KNOWLEDGE**: Do not pull from outside training data. If a dosage or specific drug isn't in the text, do not mention it.
+    4. **NO EXTERNAL KNOWLEDGE**: 
+       - If the text mentions "iron therapy" but not a specific dose, do not include a dose. 
+       - If the text is silent on a specific complication, do not mention it.
 
-    **FORMATTING**: Output strictly as a JSON list of objects: [{"question": "...", "answer": "..."}].
+    **FORMATTING**: Output strictly as a flat JSON list of objects: [[{{"question": "...", "answer": "..."}}]]. Do not wrap the list in another list or add extra keys.
 
     ---
     TEXT TO PROCESS:

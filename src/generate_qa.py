@@ -1,21 +1,30 @@
 import json
 import logging
+import yaml
 from pathlib import Path
 from synthetic_data_kit.models.llm_client import LLMClient
 from synthetic_data_kit.generators.qa_generator import QAGenerator
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger(__name__)
+from synthetic_data_kit.generators.qa_generator import QAGenerator
 
+logger = logging.getLogger("rich")
+
+import os
+import contextlib
+
+class QualityGenerator:
     def __init__(self, config_path="config/sft_config.yaml"):
         self.config_path = Path(config_path)
-        import yaml
         with open(self.config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
         self.num_pairs = self.config.get("generation", {}).get("num_pairs", 3)
-        self.client = LLMClient(config_path=self.config_path)
-        self.generator = QAGenerator(client=self.client, config_path=self.config_path)
+        
+        # Suppress SDK's internal print() statements
+        with open(os.devnull, 'w') as fnull:
+            with contextlib.redirect_stdout(fnull):
+                self.client = LLMClient(config_path=self.config_path)
+                self.generator = QAGenerator(client=self.client, config_path=self.config_path)
 
     def generate_all(self, input_root="data/processed/sdk_inputs", output_root="data/processed/qa_results"):
         input_root = Path(input_root)
@@ -30,28 +39,43 @@ logger = logging.getLogger(__name__)
             doc_output = output_root / doc_name
             doc_output.mkdir(parents=True, exist_ok=True)
             
-            logger.info(f"🧬 Generating QA for: {doc_name}")
-            
             topic_files = sorted(list(doc_dir.glob("*.txt")))
             
-            for topic_file in topic_files:
+            # Count skips and identify new files
+            to_process = []
+            skipped_count = 0
+            for tf in topic_files:
+                if (doc_output / f"{tf.stem}_qa.json").exists():
+                    skipped_count += 1
+                else:
+                    to_process.append(tf)
+            
+            if skipped_count > 0:
+                logger.info(f"⏭ Skipped {skipped_count} sections in {doc_name} (already exist)")
+            
+            if not to_process:
+                continue
+
+            logger.info(f"🧬 Generating QA for {len(to_process)} new sections in: {doc_name}")
+            
+            for topic_file in to_process:
                 try:
                     output_file = doc_output / f"{topic_file.stem}_qa.json"
-                    
-                    # Resume logic: Skip if already exists
-                    if output_file.exists():
-                        logger.info(f"  ⏭ Skipping {topic_file.name} (already exists)")
-                        continue
-
                     text = topic_file.read_text(encoding="utf-8")
-                    # Use the SDK's process_document which handles summary and QA pairs
-                    results = self.generator.process_document(text, num_pairs=self.num_pairs, verbose=True)
                     
-                    if results and "qa_pairs" in results:
+                    # Generate QA pairs (Fast path)
+                    qa_pairs = self.generator.generate_qa_pairs(text, summary="", num_pairs=self.num_pairs)
+                    
+                    if qa_pairs:
+                        # Return the original text as 'summary' (context) for the SFT builder
+                        results = {
+                            "summary": text,
+                            "qa_pairs": qa_pairs
+                        }
                         output_file.write_text(json.dumps(results, indent=2))
-                        logger.info(f"  ✅ {topic_file.name} -> {len(results['qa_pairs'])} pairs")
+                        logger.info(f"  ✅ {topic_file.name} -> {len(qa_pairs)} pairs")
                     else:
-                        logger.warning(f"  ⚠️ No pairs generated for {topic_file.name}")
+                        logger.warning(f"  ⚠️ No results generated for {topic_file.name}")
                         
                 except Exception as e:
                     logger.error(f"  ❌ Error processing {topic_file.name}: {e}")

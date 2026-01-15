@@ -4,8 +4,7 @@ from pathlib import Path
 from docling.chunking import HierarchicalChunker
 from .core import get_docling_converter, clean_text
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("rich")
 
 class UnifiedPipeline:
     def __init__(self, raw_dir="data/raw", out_root="data/processed"):
@@ -15,15 +14,15 @@ class UnifiedPipeline:
         
     def process(self):
         converter = get_docling_converter()
+        # Group files by guideline
         files = [f for ext in ['*.pdf', '*.html', '*.docx'] for f in self.raw_dir.glob(ext)]
         
         for file in files:
             source = file.stem
             doc_dir = self.out_root / f"sdk_inputs/{source}"
             
-            # Skip if already processed
             if doc_dir.exists() and any(doc_dir.iterdir()):
-                logger.info(f"  ⏭ Skipping extraction for {file.name} (already structured)")
+                logger.info(f"⏭ Skipping {file.name} (already structured)")
                 continue
 
             try:
