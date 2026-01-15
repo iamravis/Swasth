@@ -41,6 +41,9 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("synthetic_data_kit").setLevel(logging.WARNING)
 logging.getLogger("docling").setLevel(logging.WARNING)
 
+# Track if this script started the Ollama service
+STARTED_BY_SCRIPT = False
+
 def print_banner():
     banner = """
     🧬 SWASTH: MEDICAL SFT DATA PIPELINE
@@ -81,6 +84,7 @@ def is_ollama_process_running():
 
 def ensure_ollama(model_name=None):
     """Ensure Ollama is running, attempting to start it if necessary."""
+    global STARTED_BY_SCRIPT
     if check_ollama(model_name):
         console.print("[success]✅ Ollama is online and reachable.[/success]")
         return True
@@ -95,6 +99,9 @@ def ensure_ollama(model_name=None):
                 subprocess.Popen(["open", "/Applications/Ollama.app"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
                 subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Tag as started by script for later cleanup
+            STARTED_BY_SCRIPT = True
         except Exception as e:
             console.print(f"[error]❌ Failed to launch Ollama: {e}[/error]")
             return False
@@ -111,6 +118,21 @@ def ensure_ollama(model_name=None):
     console.print("[error]❌ Ollama API did not become ready after 45s.[/error]")
     console.print("[info]Tip: Try starting Ollama manually and then re-run this script.[/info]")
     return False
+
+def cleanup_ollama():
+    """Shut down Ollama if it was started by this script."""
+    if STARTED_BY_SCRIPT:
+        console.print("\n[info]🧹 Cleaning up resources (Shutting down Ollama)...[/info]")
+        try:
+            if sys.platform == "darwin":
+                # Graceful quit for Mac App
+                subprocess.run(["osascript", "-e", 'quit app "Ollama"'], capture_output=True)
+            else:
+                # Terminate CLI instance
+                subprocess.run(["pkill", "-f", "ollama serve"], capture_output=True)
+            console.print("[success]🛑 Ollama service terminated.[/success]")
+        except Exception as e:
+            console.print(f"[warning]⚠️  Failed to shut down Ollama cleanly: {e}[/warning]")
 
 def ingest_file(file_path):
     """Copy a single file into the data/raw directory."""
@@ -147,31 +169,39 @@ def run_all():
 
     print_banner()
     
-    # 0. Ingestion (Optional)
-    if args.file:
-        console.print("[phase]━━━━ PHASE 0: FILE INGESTION ━━━━[/phase]")
-        ingest_file(args.file)
+    try:
+        # 0. Ingestion (Optional)
+        if args.file:
+            console.print("[phase]━━━━ PHASE 0: FILE INGESTION ━━━━[/phase]")
+            ingest_file(args.file)
 
-    # 1. Extraction & Structuring
-    console.print("[phase]━━━━ PHASE 1: EXTRACTION & STRUCTURING ━━━━[/phase]")
-    with console.status("[bold cyan]Processing raw guidelines...", spinner="dots"):
-        pipeline = UnifiedPipeline()
-        pipeline.process()
-    console.print("\n") # Space after Phase 1
-    
-    # 2. Service Health Check (Self-Healing)
-    console.print("[phase]━━━━ PHASE 2: SERVICE HEALTH CHECK (SELF-HEALING) ━━━━[/phase]")
-    if not ensure_ollama(model_name):
-        console.print("[warning]⚠️  Skipping Stage 3 (QA Generation) due to backend unavailability.[/warning]")
-        sys.exit(1)
-    console.print("\n") # Space after Phase 2
+        # 1. Extraction & Structuring
+        console.print("[phase]━━━━ PHASE 1: EXTRACTION & STRUCTURING ━━━━[/phase]")
+        with console.status("[bold cyan]Processing raw guidelines...", spinner="dots"):
+            pipeline = UnifiedPipeline()
+            pipeline.process()
+        console.print("\n") # Space after Phase 1
         
-    # 3. QA Generation
-    console.print("[phase]━━━━ PHASE 3: HIGH-FIDELITY QA GENERATION ━━━━[/phase]")
-    gen = QualityGenerator(config_path=args.config)
-    gen.generate_all()
-    
-    console.print("\n[success]✨ Pipeline Execution Complete![/success]\n")
+        # 2. Service Health Check (Self-Healing)
+        console.print("[phase]━━━━ PHASE 2: SERVICE HEALTH CHECK (SELF-HEALING) ━━━━[/phase]")
+        if not ensure_ollama(model_name):
+            console.print("[warning]⚠️  Skipping Stage 3 (QA Generation) due to backend unavailability.[/warning]")
+            sys.exit(1)
+        console.print("\n") # Space after Phase 2
+            
+        # 3. QA Generation
+        console.print("[phase]━━━━ PHASE 3: HIGH-FIDELITY QA GENERATION ━━━━[/phase]")
+        gen = QualityGenerator(config_path=args.config)
+        gen.generate_all()
+        
+        console.print("\n[success]✨ Pipeline Execution Complete![/success]\n")
+        
+    except KeyboardInterrupt:
+        console.print("\n[error]🛑 Pipeline interrupted by user.[/error]")
+    except Exception as e:
+        console.print(f"\n[error]❌ Pipeline failed with error: {e}[/error]")
+    finally:
+        cleanup_ollama()
 
 if __name__ == "__main__":
     run_all()
